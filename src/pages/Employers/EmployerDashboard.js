@@ -1,15 +1,38 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import {
+  FaEnvelope,
+  FaGlobe,
+  FaPhone,
+  FaMapMarkerAlt,
+  FaBuilding,
+} from "react-icons/fa";
 
 function EmployerDashboard() {
   const username = localStorage.getItem("username");
-  const employerId = localStorage.getItem("employerId"); // logged-in employer
+  const employerId = localStorage.getItem("employerId");
   const token = localStorage.getItem("token");
 
-  const [jobs, setJobs] = useState([]);        // jobs list (both self + search)
-  const [profile, setProfile] = useState(null); // employer profile
-  const [inputId, setInputId] = useState("");  // manual EmployerId search
+  const [jobs, setJobs] = useState([]);
+  const [profile, setProfile] = useState(null);
+  const [inputId, setInputId] = useState("");
+
+  // Fetch profile automatically for logged-in employer
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await axios.get(
+          `http://localhost:5062/api/Employer/${employerId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setProfile(res.data);
+      } catch (err) {
+        console.error("Error fetching profile", err);
+      }
+    };
+    fetchProfile();
+  }, [employerId, token]);
 
   // Fetch jobs for logged-in employer initially
   useEffect(() => {
@@ -27,9 +50,9 @@ function EmployerDashboard() {
     fetchJobs();
   }, [employerId, token]);
 
-  // Get Employer Profile
+  // Get Employer Profile manually (self or others)
   const handleGetProfile = async () => {
-    const targetId = inputId || employerId; // default to logged-in
+    const targetId = inputId || employerId;
     try {
       const res = await axios.get(
         `http://localhost:5062/api/Employer/${targetId}`,
@@ -38,13 +61,13 @@ function EmployerDashboard() {
       setProfile(res.data);
     } catch (err) {
       console.error("Error fetching profile", err);
-      alert("Failed to load employer profile");
+      alert("employer profile not found");
     }
   };
 
   // Get Job Listings by EmployerId
   const handleGetJobListings = async () => {
-    const targetId = inputId || employerId; // default to logged-in
+    const targetId = inputId || employerId;
     try {
       const res = await axios.get(
         `http://localhost:5062/api/Employer/${targetId}/JobListings`,
@@ -53,7 +76,7 @@ function EmployerDashboard() {
       setJobs(res.data);
     } catch (err) {
       console.error("Error fetching job listings", err);
-      alert("Failed to load job listings");
+      alert("joblising not found");
     }
   };
 
@@ -77,9 +100,8 @@ function EmployerDashboard() {
           Manage Jobs
         </Link>
         <Link to="/view-applications" className="btn btn-dark fw-bold px-4 py-2 shadow">
-  View Applications
-</Link>
-
+          View Applications
+        </Link>
       </div>
 
       {/* Employer Profile Fetch */}
@@ -101,11 +123,47 @@ function EmployerDashboard() {
 
       {/* Employer Profile Display */}
       {profile && (
-        <div className="card shadow p-4 mb-4">
-          <h4 className="mb-3">Employer Profile</h4>
-          <p><strong>EmployerID:</strong> {profile.employerId}</p>
-          <p><strong>CompanyName:</strong> {profile.companyName}</p>
-          <p><strong>Message:</strong> {profile.message}</p>
+        <div className="card shadow mb-4 border-0">
+          {/* Banner */}
+          <div
+            style={{
+              height: "120px",
+              background: "linear-gradient(to right, #4facfe, #00f2fe)",
+              borderTopLeftRadius: "0.5rem",
+              borderTopRightRadius: "0.5rem",
+            }}
+          ></div>
+
+          <div className="card-body text-center" style={{ marginTop: "-60px" }}>
+            {/* Company Logo Circle */}
+            <div
+              className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto shadow"
+              style={{ width: "100px", height: "100px", fontSize: "36px" }}
+            >
+              {profile.companyName?.charAt(0) || <FaBuilding />}
+            </div>
+
+            {/* Company Info */}
+            <h3 className="mt-3 fw-bold">{profile.companyName}</h3>
+            <p className="text-muted">
+              {profile.companyDescription || "Company details not provided."}
+            </p>
+
+            <div className="text-start mt-4 px-3">
+              <p><strong>Employer ID:</strong> {profile.employerId}</p>
+              <p><strong>Full Name:</strong> {profile.fullName}</p>
+              <p><FaEnvelope className="me-2 text-secondary"/> {profile.email}</p>
+              {profile.website && (
+                <p>
+                  <FaGlobe className="me-2 text-secondary"/>
+                  <a href={profile.website} target="_blank" rel="noreferrer">{profile.website}</a>
+                </p>
+              )}
+              <p><FaEnvelope className="me-2 text-secondary"/> {profile.contactEmail}</p>
+              <p><FaPhone className="me-2 text-secondary"/> {profile.contactPhone}</p>
+              <p><FaMapMarkerAlt className="me-2 text-secondary"/> {profile.address}</p>
+            </div>
+          </div>
         </div>
       )}
 
@@ -132,24 +190,25 @@ function EmployerDashboard() {
         {jobs.length > 0 ? (
           jobs.map((job) => (
             <div className="col-md-4 mb-3" key={job.jobId}>
-              <div className="card shadow-sm p-3">
-                <h5 className="fw-bold">{job.jobTitle}</h5>
-                <p className="text-muted">{job.description || job.jobDescription}</p>
-                <p><strong>Location:</strong> {job.location}</p>
-                <p><strong>Salary:</strong> {job.salaryRange}</p>
-                <p>
-                  <small>
-                    Posted on:{" "}
-                    {job.postedDate ? new Date(job.postedDate).toLocaleDateString() : "N/A"}
-                  </small>
-                </p>
-                <div className="d-flex gap-2">
-                  <Link to={`/applications/${job.jobId}`} className="btn btn-sm btn-warning">
-                    View Applications
-                  </Link>
-                  <Link to={`/update-job/${job.jobId}`} className="btn btn-sm btn-dark">
-                    Update
-                  </Link>
+              <div className="card shadow-sm border-0 h-100">
+                <div className="card-body d-flex flex-column">
+                  <h5 className="fw-bold">{job.jobTitle}</h5>
+                  <p className="text-muted">{job.description || job.jobDescription}</p>
+                  <p><FaMapMarkerAlt className="me-2"/> {job.location}</p>
+                  <p><FaPhone className="me-2"/> {job.salaryRange}</p>
+                  <p>
+                    <small className="text-muted">
+                      Posted on: {job.postedDate ? new Date(job.postedDate).toLocaleDateString() : "N/A"}
+                    </small>
+                  </p>
+                  <div className="mt-auto d-flex gap-2">
+                    <Link to={`/applications/${job.jobId}`} className="btn btn-sm btn-warning">
+                      View Applications
+                    </Link>
+                    <Link to={`/update-job/${job.jobId}`} className="btn btn-sm btn-dark">
+                      Update
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>

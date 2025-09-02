@@ -36,3 +36,24 @@
     transform: rotate(360deg);
   }
 }
+
+.quick-action-btn {
+  padding: 10px 20px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 2px solid #ffc107;
+  background: white;
+  color: #333;
+  transition: 0.3s ease;
+}
+
+.quick-action-btn:hover {
+  background: #ffd65a;
+  color: black;
+}
+
+.quick-action-btn.active {
+  background: #ffc107;
+  color: black;
+  border-color: #e0a800;
+}

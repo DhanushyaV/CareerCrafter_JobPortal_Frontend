@@ -27,7 +27,7 @@ function MyApplications() {
 
   return (
     <div className="container mt-4">
-      <h3 className="mb-4">📄 My Applications</h3>
+      <h3 className="mb-4">📄 My Application status</h3>
 
       {/* Input + Button */}
       <div className="card shadow p-3 mb-4">
@@ -44,7 +44,7 @@ function MyApplications() {
             onClick={handleGetApplications}
             className="btn btn-info fw-bold"
           >
-            Get Applications
+            Get Application status
           </button>
         </div>
       </div>

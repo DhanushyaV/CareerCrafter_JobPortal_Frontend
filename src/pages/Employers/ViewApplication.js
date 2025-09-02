@@ -8,6 +8,7 @@ function ViewApplications() {
   const [inputJobId, setInputJobId] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Fetch applications by JobId
   const handleGetApplications = async () => {
     if (!inputJobId) {
       alert("Please enter a Job ID");
@@ -16,10 +17,9 @@ function ViewApplications() {
     setLoading(true);
     try {
       const res = await axios.get(
-        `http://localhost:5062/api/Employer/ViewApplications/${inputJobId}`,
+        `http://localhost:5062/api/Application/ByJob/${inputJobId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      console.log("Applications response:", res.data);
       setApplications(res.data);
     } catch (err) {
       console.error("Error fetching applications", err);
@@ -29,10 +29,27 @@ function ViewApplications() {
     }
   };
 
+  // Update status of application
+  const handleUpdateStatus = async (applicationId, status) => {
+    try {
+      await axios.put(
+        `http://localhost:5062/api/Application/UpdateStatus`,
+        { applicationId, status },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      alert(`✅ Application #${applicationId} marked as ${status}`);
+      handleGetApplications(); // refresh list
+    } catch (err) {
+      console.error("Error updating status", err);
+      alert("Failed to update status");
+    }
+  };
+
   return (
     <div className="container mt-5">
       <div className="card shadow p-4">
-        <h3 className="mb-4">View Applications by JobId</h3>
+        <h3 className="mb-4">📄 View Applications by Job ID</h3>
 
         {/* Input for JobId */}
         <div className="d-flex gap-2 mb-3">
@@ -45,9 +62,9 @@ function ViewApplications() {
           />
           <button
             onClick={handleGetApplications}
-            className="btn btn-info fw-bold"
+            className="btn btn-warning fw-bold"
           >
-            Get Applications
+            Get Application status
           </button>
         </div>
 
@@ -60,16 +77,46 @@ function ViewApplications() {
               <div key={app.applicationId} className="col-md-4 mb-3">
                 <div className="card shadow-sm p-3">
                   <h5 className="fw-bold">Application #{app.applicationId}</h5>
+                  <p><strong>Job ID:</strong> {app.jobId}</p>
+                  <p><strong>Applicant:</strong> {app.jobSeekerId}</p>
                   <p>
-                    <strong>Status:</strong> {app.status}
+                    <strong>Status:</strong>{" "}
+                    <span
+                      className={`badge ${
+                        app.status === "Pending"
+                          ? "bg-warning text-dark"
+                          : app.status === "Accepted"
+                          ? "bg-success"
+                          : "bg-danger"
+                      }`}
+                    >
+                      {app.status}
+                    </span>
                   </p>
-                  <p className="text-muted">{app.message}</p>
+
+                  {/* Action Buttons */}
+                  {app.status === "Pending" && (
+                    <div className="d-flex gap-2 mt-2">
+                      <button
+                        className="btn btn-sm btn-success"
+                        onClick={() => handleUpdateStatus(app.applicationId, "Accepted")}
+                      >
+                        ✅ Accept
+                      </button>
+                      <button
+                        className="btn btn-sm btn-danger"
+                        onClick={() => handleUpdateStatus(app.applicationId, "Rejected")}
+                      >
+                        ❌ Reject
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-muted">No applications found.</p>
+          <p className="text-muted">No applications found for this job.</p>
         )}
       </div>
     </div>
